@@ -1936,22 +1936,29 @@ extension GhosttySurfaceView {
     return .copy
   }
 
+  /// Resolves dropped content with the same priority as the pasteboard read:
+  /// a URL string first, then file URLs as escaped paths, then raw text.
+  /// Pure so unit tests can pin the Finder image-file case without a drag.
+  static func droppedContent(urlString: String?, fileURLs: [URL], string: String?) -> String? {
+    if let urlString {
+      return NSPasteboard.ghosttyEscape(urlString)
+    }
+    if !fileURLs.isEmpty {
+      return fileURLs.map { NSPasteboard.ghosttyEscape($0.path) }.joined(separator: " ")
+    }
+    return string
+  }
+
   override func performDragOperation(_ sender: any NSDraggingInfo) -> Bool {
     let pasteboard = sender.draggingPasteboard
-    let content: String?
-    if let url = pasteboard.string(forType: .URL) {
-      content = NSPasteboard.ghosttyEscape(url)
-    } else if let urls = pasteboard.readObjects(forClasses: [NSURL.self]) as? [URL],
-      !urls.isEmpty
-    {
-      content = urls.map { NSPasteboard.ghosttyEscape($0.path) }.joined(separator: " ")
-    } else if let str = pasteboard.string(forType: .string) {
-      content = str
-    } else {
-      content = nil
-    }
-
-    guard let content else { return false }
+    let urls = pasteboard.readObjects(forClasses: [NSURL.self]) as? [URL] ?? []
+    guard
+      let content = Self.droppedContent(
+        urlString: pasteboard.string(forType: .URL),
+        fileURLs: urls,
+        string: pasteboard.string(forType: .string)
+      )
+    else { return false }
     Task { @MainActor in
       self.insertText(content, replacementRange: NSRange(location: 0, length: 0))
     }
