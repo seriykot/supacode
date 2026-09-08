@@ -217,6 +217,20 @@ struct GhosttySurfaceViewTests {
       !GhosttySurfaceView.shouldRouteCommandPasteToNativeImagePaste(
         event: Self.commandV(),
         pasteboardTypes: [.tiff],
+        imagePasteAgents: [.copilot],
+        keySequenceActive: false,
+        keyTableDepth: 0
+      )
+    )
+  }
+
+  // OpenCode attaches clipboard images on Ctrl+V like Claude does, so its
+  // image-only paste takes the native route instead of the text clipboard.
+  @Test func imageOnlyCommandVRoutesForOpencodeImagePaste() {
+    #expect(
+      GhosttySurfaceView.shouldRouteCommandPasteToNativeImagePaste(
+        event: Self.commandV(),
+        pasteboardTypes: [.png],
         imagePasteAgents: [.opencode],
         keySequenceActive: false,
         keyTableDepth: 0

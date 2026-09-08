@@ -1285,9 +1285,10 @@ final class GhosttySurfaceView: NSView, Identifiable {
     // answer so a click on the sidebar lets ⌘⌫ reach the main menu.
     guard focused, window?.firstResponder === self else { return false }
 
-    // Image-only Cmd+V routes to Claude's native Ctrl+V paste before binding
-    // resolution, intentionally overriding the default `super+v=paste_from_clipboard`
-    // binding (which would otherwise drop the image).
+    // Image-only Cmd+V routes to the agent's native Ctrl+V paste before
+    // binding resolution, intentionally overriding the default
+    // `super+v=paste_from_clipboard` binding (which would otherwise drop
+    // the image).
     if routeCommandPasteToNativeImagePasteIfNeeded(event) {
       return true
     }
@@ -1352,6 +1353,11 @@ final class GhosttySurfaceView: NSView, Identifiable {
 
   // `pasteboardTypes` is an autoclosure so the cross-process pasteboard read only
   // happens once the cheap local gates pass, not on every Cmd chord.
+  // Agents whose TUIs attach clipboard images on Ctrl+V. Both read the
+  // system clipboard themselves; the surface only retargets Cmd+V there.
+  // OpenCode ships the same flow (`prompt.paste` over its clipboard read).
+  static let nativeImagePasteAgents: Set<SkillAgent> = [.claude, .opencode]
+
   static func shouldRouteCommandPasteToNativeImagePaste(
     event: NSEvent,
     pasteboardTypes: @autoclosure () -> [NSPasteboard.PasteboardType]?,
@@ -1361,7 +1367,7 @@ final class GhosttySurfaceView: NSView, Identifiable {
   ) -> Bool {
     guard event.type == .keyDown else { return false }
     guard !keySequenceActive, keyTableDepth == 0 else { return false }
-    guard imagePasteAgents.contains(.claude) else { return false }
+    guard !imagePasteAgents.isDisjoint(with: Self.nativeImagePasteAgents) else { return false }
     guard isExactCommandV(event) else { return false }
     guard let types = pasteboardTypes(), types.contains(where: isImagePasteboardType) else { return false }
     return types.allSatisfy { !isTextOrFilePasteboardType($0) }
