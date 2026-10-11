@@ -121,6 +121,7 @@ jobs:
               xcconfig_escape() { printf '%s' "$1" | sed 's#//#/$()/#g'; }
               cat > build/ReleaseOverrides.xcconfig <<EOF
               CURRENT_PROJECT_VERSION = $BUILD_NUMBER
+              SUPACODE_RELEASE_DAY = $(date -u +%Y-%m-%d)
               SENTRY_DSN = $(xcconfig_escape "$SENTRY_DSN")
               POSTHOG_API_KEY = $(xcconfig_escape "$POSTHOG_API_KEY")
               POSTHOG_HOST = $(xcconfig_escape "$POSTHOG_HOST")
@@ -288,6 +289,7 @@ jobs:
           # Inject sparkle:channel tag into the tip items
           sed -i '' 's|<enclosure |<sparkle:channel>tip</sparkle:channel>\n            <enclosure |' "$STAGING/appcast.xml"
           cp "$STAGING/appcast.xml" build/appcast.xml
+          python3 scripts/stamp-appcast-release-day.py build/supacode.app.zip build/appcast.xml
           find "$STAGING" -name "*.delta" -exec cp {} build/ \; 2>/dev/null || true
       - uses: actions/upload-artifact@v6
         with:
@@ -451,6 +453,7 @@ jobs:
 
           printf "%s" "$SPARKLE_PRIVATE_KEY" | tr -d '\r\n\t ' | ./bins/generate_appcast --download-url-prefix "https://supacode.sh/download/$TAG/" --full-release-notes-url "https://github.com/supabitapp/supacode/releases" --embed-release-notes --maximum-versions $MAX_DELTAS --maximum-deltas $MAX_DELTAS --delta-compression lzma --ed-key-file - "$STAGING"
           cp "$STAGING/appcast.xml" build/appcast.xml
+          python3 scripts/stamp-appcast-release-day.py build/supacode.app.zip build/appcast.xml
           find "$STAGING" -name "*.delta" -exec cp {} build/ \; 2>/dev/null || true
       - name: Generate checksums
         run: |

@@ -156,6 +156,9 @@ private struct SettingsSidebarView: View {
       Label("Global Scripts", systemImage: "terminal")
         .appFont(.body)
         .tag(SettingsSection.scripts)
+      Label("License", systemImage: "key")
+        .appFont(.body)
+        .tag(SettingsSection.license)
       Label("Updates", systemImage: "arrow.down.circle")
         .appFont(.body)
         .tag(SettingsSection.updates)
@@ -198,6 +201,7 @@ private struct SettingsDetailView: View {
   let selectedRepositorySummary: SettingsRepositorySummary?
   @Bindable var settingsStore: StoreOf<SettingsFeature>
   let updatesStore: StoreOf<UpdatesFeature>
+  let licenseStore: StoreOf<LicenseFeature>
   @Environment(GhosttyShortcutManager.self) private var ghosttyShortcuts: GhosttyShortcutManager?
 
   var body: some View {
@@ -218,6 +222,8 @@ private struct SettingsDetailView: View {
       DeveloperSettingsView(store: settingsStore)
     case .shortcuts:
       KeyboardShortcutsSettingsView(store: settingsStore)
+    case .license:
+      LicenseSettingsView(store: licenseStore)
     case .updates:
       UpdatesSettingsView(settingsStore: settingsStore, updatesStore: updatesStore)
     case .forges:
@@ -307,7 +313,8 @@ struct SettingsView: View {
         selection: selection,
         selectedRepositorySummary: selectedRepositorySummary,
         settingsStore: settingsStore,
-        updatesStore: updatesStore
+        updatesStore: updatesStore,
+        licenseStore: store.scope(state: \.license, action: \.license)
       )
     }
     .toolbar {

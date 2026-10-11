@@ -22,6 +22,8 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>SupacodeReleaseDay</key>
+	<string>$(SUPACODE_RELEASE_DAY)</string>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>A program running within Supacode would like to use AppleScript.</string>
 	<key>NSAudioCaptureUsageDescription</key>

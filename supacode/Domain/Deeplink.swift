@@ -3,6 +3,7 @@ import Foundation
 /// A parsed deeplink action from a `supacode://` URL.
 enum Deeplink: Equatable, Sendable {
   case open
+  case activateLicense(key: String)
   case help
   case worktree(id: Worktree.ID, action: WorktreeAction, background: Bool = false)
   case repoOpen(path: URL)
@@ -78,6 +79,7 @@ enum Deeplink: Equatable, Sendable {
     case shortcuts
     case scripts
     case updates
+    case license
     case github
     case forges
   }

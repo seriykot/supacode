@@ -104,7 +104,9 @@ final class SupacodeAppDelegate: NSObject, NSApplicationDelegate {
 
   func application(_ application: NSApplication, open urls: [URL]) {
     guard let appStore else {
-      SupaLogger("Deeplink").warning("Deeplink received before store initialized, buffering: \(urls)")
+      SupaLogger("Deeplink").warning(
+        "Deeplink received before store initialized, buffering: \(urls.map(DeeplinkClient.loggingDescription))"
+      )
       bufferedDeeplinkURLs.append(contentsOf: urls)
       return
     }

@@ -38,6 +38,7 @@ extension SettingsCommand {
     case shortcuts
     case scripts
     case updates
+    case license
     case github
     case forges
   }

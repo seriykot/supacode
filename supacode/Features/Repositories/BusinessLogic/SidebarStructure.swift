@@ -507,7 +507,8 @@ extension RepositoriesFeature.Action {
       return []
 
     // Pure signals observed by AppFeature to drain a parked CLI ack; no state.
-    case .cliWorktreeAckCancelled, .archiveWorktreeApplied, .archiveWorktreeApplyFailed:
+    case .cliWorktreeAckCancelled, .worktreeCreationRejected, .remoteWorktreeCreationCompleted,
+      .archiveWorktreeApplied, .archiveWorktreeApplyFailed:
       return []
 
     // `worktreeBranchNameLoaded` mutates `worktree.name` via `updateWorktreeName`,

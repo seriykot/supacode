@@ -5,7 +5,7 @@ import Foundation
 /// deeplink. `name` is the leaf folder name (default: the branch name); `path`
 /// is the parent directory (default: the resolved base directory). Both `nil`
 /// keeps `wt`'s default `base/<branch>` placement.
-struct WorktreePlacementOverride: Equatable {
+nonisolated struct WorktreePlacementOverride: Equatable {
   var name: String?
   var path: String?
 }

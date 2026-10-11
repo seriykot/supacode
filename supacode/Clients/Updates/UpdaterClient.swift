@@ -22,6 +22,39 @@ class SparkleUpdateDelegate: NSObject, SPUUpdaterDelegate {
       }
     }
   }
+
+  nonisolated func updater(
+    _ updater: SPUUpdater,
+    shouldProceedWithUpdate item: SUAppcastItem,
+    updateCheck: SPUUpdateCheck
+  ) throws {
+    guard LicenseBuild.isEnforced else { return }
+    let record = try LicenseKeychain().load()
+    guard let key = record.key, let credential = LicenseCredential(key),
+      let token = record.token, let device = LicenseDevice.current()
+    else { return }
+    let codec = try LicenseEntitlementCodec(
+      publicKeyRawRepresentation: Data(base64Encoded: LicenseBuild.publicKey)!
+    )
+    guard
+      let entitlement = codec.decode(
+        token: token, expectedDeviceID: device.id, expectedLicenseID: credential.licenseID
+      )
+    else { throw LicenseError.invalidEntitlement }
+    guard entitlement.status == .active else { return }
+    guard let published = item.date, let end = entitlement.updatesThrough,
+      LicenseDay.today(at: published) <= end
+    else {
+      throw NSError(
+        domain: "app.supabit.supacode.license", code: 1,
+        userInfo: [
+          NSLocalizedDescriptionKey: "This update is outside your included updates.",
+          NSLocalizedRecoverySuggestionErrorKey:
+            "Renew updates in Supacode's License settings, or keep using your current release.",
+        ]
+      )
+    }
+  }
 }
 
 extension UpdaterClient: DependencyKey {
