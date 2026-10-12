@@ -1546,7 +1546,7 @@ struct AppFeature {
 
       case .repositories(.delegate(.licenseRequired)):
         analyticsClient.capture("license_gate_shown", ["trial_creations": state.license.snapshot.trialCreations])
-        return .send(.license(.show))
+        return .send(.license(.purchaseRequired))
       case .repositories(.delegate(.licenseSnapshotUpdated(let snapshot))):
         return .send(.license(.snapshotUpdated(snapshot)))
       case .repositories(.worktreeCreationRejected(let pendingID, let message, _)):

@@ -11,6 +11,7 @@ struct LicenseFeature {
     var isBusy = false
     var errorMessage: String?
     var isPresented = false
+    @Presents var alert: AlertState<Alert>?
 
     mutating func apply(_ update: LicenseSnapshot) {
       $snapshot.withLock { current in
@@ -31,10 +32,16 @@ struct LicenseFeature {
     case refresh
     case completed(Result<LicenseSnapshot, Error>)
     case show
+    case purchaseRequired
+    case alert(PresentationAction<Alert>)
     case dismiss
     case snapshotUpdated(LicenseSnapshot)
     case buy
     case portal
+  }
+
+  enum Alert: Equatable {
+    case buy
   }
 
   private nonisolated enum CancelID: Hashable, Sendable { case periodicRefresh }
@@ -112,6 +119,29 @@ struct LicenseFeature {
             await send(.loaded(.failure(error)))
           }
         }
+      case .purchaseRequired:
+        state.alert = AlertState {
+          TextState("License Required")
+        } actions: {
+          ButtonState(role: .cancel) {
+            TextState("Cancel")
+          }
+          ButtonState(action: .buy) {
+            TextState("Buy Supacode")
+          }
+        } message: {
+          TextState(
+            """
+            A Supacode license is required to create more local worktrees. \
+            Buy a license on the website, or activate an existing license in Settings → License.
+            """
+          )
+        }
+        return .none
+      case .alert(.presented(.buy)):
+        return .send(.buy)
+      case .alert:
+        return .none
       case .dismiss:
         state.isPresented = false
         return .none
@@ -126,5 +156,6 @@ struct LicenseFeature {
         return .none
       }
     }
+    .ifLet(\.$alert, action: \.alert)
   }
 }

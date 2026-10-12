@@ -83,6 +83,7 @@ struct ContentView: View {
     }
     .alert($repositoriesStore.scope(state: \.alert, action: \.alert))
     .alert($store.scope(state: \.alert, action: \.alert))
+    .alert($store.scope(state: \.license.alert, action: \.license.alert))
     .sheet(
       item: $store.scope(state: \.deeplinkInputConfirmation, action: \.deeplinkInputConfirmation)
     ) { confirmationStore in

@@ -307,6 +307,78 @@ struct LicenseTests {
     }
   }
 
+  @Test(.dependencies, arguments: [false, true])
+  func purchasePromptRequiresConfirmation(opensCheckout: Bool) async {
+    let openedURLs = LockIsolated<[URL]>([])
+    let events = LockIsolated<[String]>([])
+    let store = TestStore(initialState: LicenseFeature.State()) {
+      LicenseFeature()
+    } withDependencies: {
+      $0.urlOpener.open = { url in openedURLs.withValue { $0.append(url) } }
+      $0.analyticsClient.capture = { event, _ in events.withValue { $0.append(event) } }
+    }
+
+    await store.send(.purchaseRequired) {
+      $0.alert = Self.purchaseAlert
+    }
+    #expect(!store.state.isPresented)
+    #expect(openedURLs.value.isEmpty)
+    #expect(events.value.isEmpty)
+
+    if opensCheckout {
+      await store.send(.alert(.presented(.buy))) {
+        $0.alert = nil
+      }
+      await store.receive(\.buy)
+      #expect(openedURLs.value == [URL(string: "https://license.supacode.sh/buy")!])
+      #expect(events.value == ["license_checkout_opened"])
+    } else {
+      await store.send(.alert(.dismiss)) {
+        $0.alert = nil
+      }
+      #expect(openedURLs.value.isEmpty)
+      #expect(events.value.isEmpty)
+    }
+    #expect(!store.state.isPresented)
+  }
+
+  @Test(.dependencies) func licenseGatePresentsPurchasePromptInsteadOfActivation() async {
+    let storage = SettingsTestStorage()
+    let store = withDependencies {
+      $0.settingsFileStorage = storage.storage
+    } operation: {
+      TestStore(initialState: AppFeature.State()) {
+        AppFeature()
+      }
+    }
+
+    await store.send(.repositories(.delegate(.licenseRequired)))
+    await store.receive(\.license.purchaseRequired) {
+      $0.license.alert = Self.purchaseAlert
+    }
+    #expect(!store.state.license.isPresented)
+  }
+
+  private static var purchaseAlert: AlertState<LicenseFeature.Alert> {
+    AlertState {
+      TextState("License Required")
+    } actions: {
+      ButtonState(role: .cancel) {
+        TextState("Cancel")
+      }
+      ButtonState(action: .buy) {
+        TextState("Buy Supacode")
+      }
+    } message: {
+      TextState(
+        """
+        A Supacode license is required to create more local worktrees. \
+        Buy a license on the website, or activate an existing license in Settings → License.
+        """
+      )
+    }
+  }
+
   @Test(.dependencies) func exhaustedAllowanceNeverStartsLocalGitCreation() async {
     let repository = Repository(
       location: .local(URL(fileURLWithPath: "/tmp/license-test-repository")), kind: .git,
